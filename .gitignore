@@ -1,0 +1,8 @@
+# NPM packages
+node_modules/
+
+# TypeScript
+transpile/
+
+# Persistent data
+my_local_storage/
