@@ -5,6 +5,11 @@ https://matrix-org.github.io/matrix-js-sdk/23.1.1/index.html
 
 import sdk from "matrix-js-sdk"
 
+/*
+$ matrix-bot --fetch-access-token
+$ matrix-bot --set-display-name <NAME>
+*/
+
 import { config } from "dotenv"
 config( { path: ".env" } )
 
@@ -19,8 +24,18 @@ const USER_TOKEN = process.env.USER_TOKEN
 const userIdentifier = `@${ USER_NAME }:${ HOMESERVER_DOMAIN }`
 const deviceIdentifier = "matrix-bot"
 
+import commandLineArgs from "command-line-args"
+const cliOptions = commandLineArgs( [
+	{ name: "fetch-access-token" },
+	{ name: "set-display-name", type: String }
+] )
+const FETCH_ACCESS_TOKEN = "fetch-access-token" in cliOptions
+const SET_DISPLAY_NAME: string | null | undefined = cliOptions[ "set-display-name" ]
+
 // Login with username & password to get the access token
-if ( USER_TOKEN === undefined && USER_PASSWORD !== undefined ) {
+if ( FETCH_ACCESS_TOKEN === true ) {
+	if ( USER_TOKEN !== undefined || USER_PASSWORD === undefined ) throw new Error( "USER_TOKEN must not be defined, but USER_PASSWORD must be defined" )
+
 	const matrixClient = sdk.createClient( {
 		baseUrl: `https://${ HOMESERVER_DOMAIN }`,
 		deviceId: deviceIdentifier
@@ -50,8 +65,12 @@ matrixClient.once( "sync", async ( state: string ) => {
 	if ( state === "PREPARED" ) {
 		console.log( "Synced with server, we are now ready!" )
 
-		await matrixClient.setDisplayName( "Bot" )
-		console.log( "Set display name" )
+		if ( SET_DISPLAY_NAME !== undefined ) {
+			if ( SET_DISPLAY_NAME === null || SET_DISPLAY_NAME.length <= 0 ) throw new Error( "Display name must not be null or empty" )
+
+			await matrixClient.setDisplayName( "Bot" )
+			console.log( "Set display name to '%s'", SET_DISPLAY_NAME )
+		}
 
 		const rooms = matrixClient.getRooms()
 		console.log( "Found %d rooms", rooms.length )
