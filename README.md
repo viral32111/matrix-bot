@@ -2,6 +2,8 @@
 
 The bot for my community Matrix room.
 
+**NOTE: This is under development and does not do much at the moment.**
+
 ## License
 
 Copyright (C) 2022-2023 [viral32111](https://viral32111.com).
