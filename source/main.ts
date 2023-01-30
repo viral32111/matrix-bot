@@ -1,192 +1,102 @@
 /*
-https://github.com/matrix-org/matrix-js-sdk
-https://matrix-org.github.io/matrix-js-sdk/15.5.1/index.html
 https://matrix.org/docs/guides/usage-of-the-matrix-js-sdk
-https://matrix.org/docs/guides/end-to-end-encryption-implementation-guide
+https://matrix-org.github.io/matrix-js-sdk/23.1.1/index.html
 */
 
-import { format } from "util"
-import { request } from "https"
+import sdk from "matrix-js-sdk"
 
-import olm from "olm"
-global.Olm = olm
+import { config } from "dotenv"
+config( { path: ".env" } )
 
-import { createClient, MatrixEvent, Room } from "matrix-js-sdk"
-import { LocalStorage } from "node-localstorage"
+if ( process.env.HOMESERVER_DOMAIN === undefined ) throw new Error( "HOMESERVER_DOMAIN is not defined in environment variables" )
+if ( process.env.USER_NAME === undefined ) throw new Error( "USER_NAME is not defined in environment variables" )
+if ( process.env.USER_PASSWORD === undefined && process.env.USER_TOKEN === undefined ) throw new Error( "Either USER_PASSWORD or USER_TOKEN is not defined in environment variables" )
+const HOMESERVER_DOMAIN = process.env.HOMESERVER_DOMAIN
+const USER_NAME = process.env.USER_NAME
+const USER_PASSWORD = process.env.USER_PASSWORD
+const USER_TOKEN = process.env.USER_TOKEN
 
-// @ts-expect-error: Undocumented pile of garbage
-import { WebStorageSessionStore } from "matrix-js-sdk/lib/store/session/webstorage"
+const userIdentifier = `@${ USER_NAME }:${ HOMESERVER_DOMAIN }`
+const deviceIdentifier = "matrix-bot"
 
-import { LocalStorageCryptoStore } from "matrix-js-sdk/lib/crypto/store/localStorage-crypto-store"
-
-import { getLogger, levels } from "loglevel"
-getLogger( "matrix" ).setDefaultLevel( levels.SILENT )
-
-const placeToPutThings = new LocalStorage( "./my_local_storage" )
-const fancyMagic = new WebStorageSessionStore( placeToPutThings )
-const moreFancyMagic = new LocalStorageCryptoStore( placeToPutThings )
-
-const client = createClient( {
-	baseUrl: "https://matrix-client.matrix.org",
-	sessionStore: fancyMagic,
-	cryptoStore: moreFancyMagic,
-	//accessToken: "REDACTED",
-	userId: "REDACTED",
-	deviceId: "cum jar"
-} )
-
-const primaryRoomIdentifier = "REDACTED"
-
-client.initCrypto().then( () => {
-	console.log( "crypto innit" )
-	
-	client.login( "m.login.password", {
-		"user": "REDACTED",
-		"password": "REDACTED",
-	} ).then( ( response ) => {
-		console.log( "The access token is '%s'", response.access_token )
-	
-		client.startClient( {
-			initialSyncLimit: 0
-		} )
+// Login with username & password to get the access token
+if ( USER_TOKEN === undefined && USER_PASSWORD !== undefined ) {
+	const matrixClient = sdk.createClient( {
+		baseUrl: `https://${ HOMESERVER_DOMAIN }`,
+		deviceId: deviceIdentifier
 	} )
-} )
-
-client.once( "sync", ( state, previousState, result ) => {
-	if ( state === "PREPARED" ) {
-		console.log( "I am prepared!" )
-
-		const rooms = client.getRooms()
-		
-		for ( const room of rooms ) {
-			console.log( room.name, room.roomId )
-		}
-
-		/*if ( room.name !== "viral32111's community" ) continue
-
-		primaryRoomIdentifier = room.roomId
-
-		console.log( "My primary room identifier:", primaryRoomIdentifier )*/
-
-		/*client.sendEvent( room.roomId, "m.room.message", {
-			"body": format( "Hello, I'm now here!\nThis room's identifier is %s.", room.roomId ),
-			"msgtype": "m.text"
-		}, "" ).then( () => {
-			console.log( "Startup message sent!" )
-		} )*/
-
-	} else {
-		console.log( "Unknown state??", state, previousState, result )
-	}
-} )
-
-/*client.on( "RoomMember.membership", ( event: MatrixEvent, member: RoomMember ) => {
-	if ( member.membership === "invite" && member.userId === client.getUserId() ) {
-		console.log( "Joining room: '%s'...", member.roomId )
-
-		client.joinRoom( member.roomId ).then( () => {
-			console.log( "Joined roon: '%s'", member.roomId )
-		} )
-	}
-} )*/
-
-client.on( "Room.timeline", ( event: MatrixEvent, room: Room ) => {
-	if ( !client.isInitialSyncComplete() ) return
-
-	if ( event.getType() === "m.room.message" && room.roomId === primaryRoomIdentifier ) {
-		if ( event.sender.userId === client.getUserId() ) {
-			console.log( "Ignoring my own message..." )
-			return
-		}
-
-		console.log( "New message '%s' in '%s'", event.getContent().body, room.roomId )
-
-		if ( event.getContent().body !== "" ) {
-			const payload = JSON.stringify( {
-				"username": format( "%s (%s)", event.sender.rawDisplayName, event.sender.userId ),
-				"avatar_url": event.sender.getAvatarUrl( client.getHomeserverUrl(), 512, 512, "crop", true, true ),
-				"content": event.getContent().body,
-				"allowed_mentions": { "parse": [] }
-			} )
-			
-			console.log( payload )
+	console.log( "Created client on home-server '%s'", HOMESERVER_DOMAIN )
 	
-			const webhookRequest = request( "https://discord.com/api/webhooks/REDACTED/REDACTED", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"Content-Length": payload.length
-				}
-			}, ( response ) => {
-				console.log( "Webhook response code:", response.statusCode, response.statusMessage )
-	
-				if ( response.statusCode ) {
-					if ( response.statusCode >= 200 && response.statusCode <= 300 ) {
-						client.sendReadReceipt( event )
-					}
-				}
-	
-				let data = ""
-	
-				response.setEncoding( "utf8" )
-	
-				response.on( "data", ( chunk ) => {
-					data += chunk
-				} )
-	
-				response.on( "end", () => {
-					console.log( "Webhook response data: '%s'", data )
-				} )
-			} )
-	
-			webhookRequest.once( "error", ( error ) => {
-				console.error( "Webhook error!", error )
-			} )
-	
-			webhookRequest.write( payload )
-			webhookRequest.end()
-		}
+	console.log( "Logging in as '%s'...", USER_NAME )
+	const loginResponse = await matrixClient.login( "m.login.password", {
+		user: USER_NAME,
+		password: USER_PASSWORD
+	} )
 
-		/*if ( event.getContent().body === "!bye" ) {
-			client.sendEvent( room.roomId, "m.room.message", {
-				"body": format( "Goodbye cruel world." ),
-				"msgtype": "m.text"
-			}, "" ).then( () => {
-				client.stopClient()
-				process.exit( 0 )
-			} )
-		} else if ( event.getContent().body === "!me" ) {
-			client.sendEvent( room.roomId, "m.room.message", {
-				"body": format( "Hello %s, your identifier is %s.", event.sender.name, event.sender.userId ),
-				"msgtype": "m.text"
-			}, "" )
-		
-		} else if ( event.getContent().body.startsWith( "!notice " ) ) {
-			client.sendEvent( room.roomId, "m.room.message", {
-				"body": format( "This is a notice! %s", event.getContent().body.substring( 8 ) ),
-				"msgtype": "m.notice"
-			}, "" )
-		}*/
-	} else if ( event.getType() === "m.room.encrypted" && room.roomId === primaryRoomIdentifier ) {
-		if ( event.sender.userId === client.getUserId() ) {
-			console.log( "Ignoring my own message..." )
-			return
-		}
-
-		console.log( "Decrypting new message in '%s' from '%s'...", room.roomId, event.sender.userId )
-
-		client.decryptEventIfNeeded( event ).then( () => {
-			console.log( "Decrypted message: '%s' (%d, %d)", event.getContent().body, event.isBeingDecrypted(), event.isDecryptionFailure() )
-		} )
-
-	} else {
-		console.log( "Unknown room.timeline??", event.getType(), room.roomId )
-	}
-} )
-
-process.once( "SIGINT", () => {
-	console.log( "\nGoodbye!" )
-
-	client.stopClient()
+	console.log( "Got access token: '%s' (%s)", loginResponse.access_token, matrixClient.getAccessToken() )
 	process.exit( 0 )
+}
+
+const matrixClient = sdk.createClient( {
+	baseUrl: `https://${ HOMESERVER_DOMAIN }`,
+	userId: userIdentifier,
+	accessToken: USER_TOKEN,
+	deviceId: deviceIdentifier
+} )
+console.log( "Created client for user '%s' on home-server '%s'", USER_NAME, HOMESERVER_DOMAIN )
+
+// @ts-ignore
+matrixClient.once( "sync", async ( state: string ) => {
+	if ( state === "PREPARED" ) {
+		console.log( "Synced with server, we are now ready!" )
+
+		await matrixClient.setDisplayName( "Bot" )
+		console.log( "Set display name" )
+
+		const rooms = matrixClient.getRooms()
+		console.log( "Found %d rooms", rooms.length )
+		for ( const room of rooms ) {
+			console.log( "\tRoom '%s' with %d members", room.name, room.getJoinedMembers().length )
+			for ( const roomMember of room.getJoinedMembers() ) console.log( "\t\tMember '%s'", roomMember.name )
+		}
+
+	} else {
+		console.warn( "Unknown sync state: '%s'", state )
+		process.exit( 1 )
+	}
+} )
+
+// @ts-ignore
+matrixClient.on( "Room.timeline", ( event: any, room: any, toStartOfTimeline: boolean ) => {
+	//console.debug( "Room.timeline:", event, room, toStartOfTimeline )
+
+	console.log( "Room '%s' got new event: %s (%s)", room.name, event.getType(), toStartOfTimeline )
+} )
+
+// @ts-ignore
+matrixClient.on( "RoomMember.membership", async ( event: any, member: any ) => {
+	//console.debug( "RoomMember.membership:", event, member )
+
+	if ( member.membership === "invite" && member.userId === userIdentifier ) {
+		console.log( "We've been invited to room '%s'", member.roomId )
+
+		/*
+		await matrixClient.joinRoom( member.roomId )
+		console.log( "Joined room '%s'", member.roomId )
+		*/
+	}
+} )
+
+// @ts-ignore
+matrixClient.on( "RoomMember.typing", ( event: any, member: any ) => {
+	if ( member.typing ) {
+		console.log( "Member '%s' started typing..." )
+	} else {
+		console.log( "Member '%s' stopped typing..." )
+	}
+} )
+
+console.log( "Starting client..." )
+await matrixClient.startClient( {
+	initialSyncLimit: 10
 } )

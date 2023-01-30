@@ -4,5 +4,5 @@ node_modules/
 # TypeScript
 dist/
 
-# Persistent data
-my_local_storage/
+# Secrets
+.env

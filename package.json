@@ -3,6 +3,7 @@
 	"version": "0.2.0",
 	"description": "The bot for my community Matrix room.",
 	"main": "./dist/main.js",
+	"type": "module",
 	"scripts": {
 		"start": "npx tsc && node ."
 	},
@@ -19,10 +20,12 @@
 	"license": "AGPL-3.0-only",
 	"dependencies": {
 		"@matrix-org/olm": "^3.2.14",
+		"dotenv": "^16.0.3",
 		"matrix-js-sdk": "^23.1.1",
 		"node-localstorage": "^2.2.1"
 	},
 	"devDependencies": {
+		"@types/dotenv": "^8.2.0",
 		"@types/matrix-js-sdk": "^11.0.1",
 		"@types/node": "^18.11.18",
 		"@types/node-localstorage": "^1.3.0",
