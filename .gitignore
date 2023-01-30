@@ -2,7 +2,7 @@
 node_modules/
 
 # TypeScript
-transpile/
+dist/
 
 # Persistent data
 my_local_storage/
