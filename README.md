@@ -1,5 +1,7 @@
 # Matrix Bot
 
+[![CI](https://github.com/viral32111/matrix-bot/actions/wor [![CodeQL](https://github.com/viral32111/matrix-bot/actions/workflows/codeql.yml/badge.svg)](https://github.com/viral32111/matrix-bot/actions/workflows/codeql.yml)
+
 The bot for my community Matrix room.
 
 **NOTE: This is under development and does not do much at the moment.**
