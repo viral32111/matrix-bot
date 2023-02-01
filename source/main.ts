@@ -52,7 +52,7 @@ if ( userToken === undefined || userToken.length <= 0 ) {
 export const matrixClient = createClient( {
 	baseUrl: `https://${ HOMESERVER_DOMAIN }`,
 	userId: userIdentifier,
-	accessToken: USER_TOKEN,
+	accessToken: userToken,
 	deviceId: deviceIdentifier
 } )
 console.log( "Created client for user '%s' on home-server '%s'", USER_NAME, HOMESERVER_DOMAIN )

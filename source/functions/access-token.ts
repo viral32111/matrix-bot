@@ -19,9 +19,10 @@ export const fetchAccessToken = async ( userName: string, userPassword: string, 
 	} )
 
 	// Check the response
-	const accessToken: string | undefined = loginResponse.access_token
-	if ( accessToken === undefined ) throw new Error( "Login response does not contain an access token" )
-	if ( accessToken === matrixClient.getAccessToken() ) throw new Error( "Login response access token does not match client access token" )
+	const responseAccessToken: string | undefined = loginResponse.access_token
+	const clientAccessToken = matrixClient.getAccessToken()
+	if ( responseAccessToken === undefined || responseAccessToken.length <= 0 ) throw new Error( "Login response does not contain a valid access token" )
+	if ( responseAccessToken !== clientAccessToken ) throw new Error( `Login response access token (${ responseAccessToken }) does not match client access token (${ matrixClient.getAccessToken() })` )
 
-	return accessToken
+	return responseAccessToken
 }
