@@ -21,4 +21,4 @@ WORKDIR ${MATRIXBOT_DIRECTORY}
 RUN npm clean-install --omit=dev
 
 # Start project in current directory
-CMD [ "/usr/local/matrix-bot" ]
+ENTRYPOINT [ "node", "/usr/local/matrix-bot" ]
