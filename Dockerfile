@@ -8,10 +8,8 @@ ARG MATRIXBOT_DIRECTORY=/usr/local/matrix-bot
 RUN mkdir --verbose --parents ${MATRIXBOT_DIRECTORY} && \
 	chown --changes --recursive ${USER_ID}:${USER_ID} ${MATRIXBOT_DIRECTORY}
 
-# Add the project files & code
-COPY --chown=${USER_ID}:${USER_ID} ./package.json ${MATRIXBOT_DIRECTORY}/package.json
-COPY --chown=${USER_ID}:${USER_ID} ./package-lock.json ${MATRIXBOT_DIRECTORY}/package-lock.json
-COPY --chown=${USER_ID}:${USER_ID} ./dist/ ${MATRIXBOT_DIRECTORY}/dist/
+# Copy the entire build artifact into the image
+COPY --chown=${USER_ID}:${USER_ID} ./ ${MATRIXBOT_DIRECTORY}
 
 # Switch to the regular user, in the project directory
 USER ${USER_ID}:${USER_ID}
