@@ -3,7 +3,8 @@ https://matrix.org/docs/guides/usage-of-the-matrix-js-sdk
 https://matrix-org.github.io/matrix-js-sdk/23.1.1/index.html
 */
 
-import sdk from "matrix-js-sdk"
+import sdk, { ClientEvent, RoomEvent, RoomMemberEvent } from "matrix-js-sdk"
+import { SyncState } from "matrix-js-sdk/lib/sync.js"
 
 /*
 $ matrix-bot --fetch-access-token
@@ -60,9 +61,8 @@ const matrixClient = sdk.createClient( {
 } )
 console.log( "Created client for user '%s' on home-server '%s'", USER_NAME, HOMESERVER_DOMAIN )
 
-// @ts-ignore
-matrixClient.once( "sync", async ( state: string ) => {
-	if ( state === "PREPARED" ) {
+matrixClient.once( ClientEvent.Sync, async ( state ) => {
+	if ( state === SyncState.Prepared ) {
 		console.log( "Synced with server, we are now ready!" )
 
 		if ( SET_DISPLAY_NAME !== undefined ) {
@@ -85,16 +85,23 @@ matrixClient.once( "sync", async ( state: string ) => {
 	}
 } )
 
-// @ts-ignore
-matrixClient.on( "Room.timeline", ( event: any, room: any, toStartOfTimeline: boolean ) => {
-	//console.debug( "Room.timeline:", event, room, toStartOfTimeline )
+matrixClient.on( RoomEvent.Timeline, async ( event, room, toStartOfTimeline ) => {
+	if ( room === undefined ) throw new Error( "Room is undefined in RoomEvent.Timeline event handler" )
+	console.debug( "Room '%s' got new TIMELINE event: %s (%s)", room.name, event.getType(), toStartOfTimeline )
 
-	console.log( "Room '%s' got new event: %s (%s)", room.name, event.getType(), toStartOfTimeline )
+	if ( event.getType() === "m.room.message" && toStartOfTimeline === false ) {
+		const messageSender = event.getSender()
+		const messageContent = event.getContent().body
+		console.log( "Message '%s' from '%s'", messageContent, messageSender )
+
+		if ( messageContent === "ping" ) {
+			await matrixClient.sendTextMessage( room.roomId, "pong" )
+		}
+	}
 } )
 
-// @ts-ignore
-matrixClient.on( "RoomMember.membership", async ( event: any, member: any ) => {
-	//console.debug( "RoomMember.membership:", event, member )
+matrixClient.on( RoomMemberEvent.Membership, async ( event, member ) => {
+	console.debug( "Member '%s' got new MEMBERSHIP event: %s", member.name, event.getType() )
 
 	if ( member.membership === "invite" && member.userId === userIdentifier ) {
 		console.log( "We've been invited to room '%s'", member.roomId )
@@ -106,8 +113,9 @@ matrixClient.on( "RoomMember.membership", async ( event: any, member: any ) => {
 	}
 } )
 
-// @ts-ignore
-matrixClient.on( "RoomMember.typing", ( event: any, member: any ) => {
+matrixClient.on( RoomMemberEvent.Typing, ( event, member ) => {
+	console.debug( "Member '%s' got new TYPING event: %s", member.name, event.getType() )
+
 	if ( member.typing ) {
 		console.log( "Member '%s' started typing..." )
 	} else {
