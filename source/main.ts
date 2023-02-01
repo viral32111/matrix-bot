@@ -12,7 +12,7 @@ $ matrix-bot --set-display-name <NAME>
 */
 
 import { config } from "dotenv"
-config( { path: ".env" } )
+config( { path: "./local.env" } )
 
 if ( process.env.HOMESERVER_DOMAIN === undefined ) throw new Error( "HOMESERVER_DOMAIN is not defined in environment variables" )
 if ( process.env.USER_NAME === undefined ) throw new Error( "USER_NAME is not defined in environment variables" )
