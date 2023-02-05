@@ -4,12 +4,21 @@ https://matrix-org.github.io/matrix-js-sdk/23.1.1/index.html
 */
 
 // Import the Matrix SDK
-import { createClient } from "matrix-js-sdk"
+import { createClient, MemoryStore } from "matrix-js-sdk"
+import { LocalStorageCryptoStore } from "matrix-js-sdk/lib/crypto/store/localStorage-crypto-store.js"
 
 // Disable the SDK's built-in logging (except warnings & errors)
 import loglevel from "loglevel"
 const matrixSdkLogger = loglevel.getLogger( "matrix" )
 matrixSdkLogger.setLevel( "warn" )
+
+// Import Olm for end-to-end encryption
+import olm from "@matrix-org/olm"
+global.Olm = olm
+
+// Import LocalStorage
+import { LocalStorage } from "node-localstorage"
+const localStorage = new LocalStorage( "./data/" )
 
 // Load our configuration as environment variables
 import { config } from "dotenv"
@@ -53,9 +62,17 @@ export const matrixClient = createClient( {
 	baseUrl: `https://${ HOMESERVER_DOMAIN }`,
 	userId: userIdentifier,
 	accessToken: userToken,
-	deviceId: deviceIdentifier
+	deviceId: deviceIdentifier,
+	cryptoStore: new LocalStorageCryptoStore( localStorage ),
+	store: new MemoryStore( {
+		localStorage: localStorage
+	} )
 } )
 console.log( "Created client for user '%s' on home-server '%s'", USER_NAME, HOMESERVER_DOMAIN )
+
+// Setup encryption
+await matrixClient.initCrypto()
+console.log( "Initialised support for end-to-end encryption (%s).", matrixClient.isCryptoEnabled() )
 
 // Import the event handlers
 console.log( "Registering event handlers..." )
@@ -64,5 +81,5 @@ import( "./events.js" )
 // Start the client
 console.log( "Starting client..." )
 await matrixClient.startClient( {
-	initialSyncLimit: 10
+	initialSyncLimit: 0 // Don't sync any messages on startup
 } )

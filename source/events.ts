@@ -24,10 +24,27 @@ matrixClient.once( ClientEvent.Sync, async ( state ) => {
 		console.log( "Found %d rooms", rooms.length )
 		for ( const room of rooms ) {
 			console.log( "\tRoom '%s' with %d members", room.name, room.getJoinedMembers().length )
-			for ( const roomMember of room.getJoinedMembers() ) console.log( "\t\tMember '%s'", roomMember.name )
+			for ( const roomMember of room.getJoinedMembers() ) {
+				console.log( "\t\tMember '%s'", roomMember.name )
+				await matrixClient.downloadKeys( [ roomMember.userId ] ) // Fetch member keys
+			}
 		}
 
 		// TODO: Many of the events below are called for historical events, so we should register them here to avoid that
+
+		/*const deviceId = matrixClient.deviceId
+		console.log( "Our device ID: '%s'", deviceId )
+		if ( deviceId === null ) throw new Error( "Device ID is null?" )
+		await matrixClient.setDeviceDetails( deviceId, {
+			display_name: deviceIdentifier
+		} )*/
+
+		// List information about our devices
+		const { devices: devices } = await matrixClient.getDevices()
+		console.log( "Found %d devices", devices.length )
+		for ( const device of devices ) {
+			console.log( "\tDevice '%s' (%s) last seen at '%s' from '%s'", device.display_name, device.device_id, device.last_seen_ts, device.last_seen_ip )
+		}
 
 	// Die if we got anything other than the initial sync
 	} else {
@@ -51,6 +68,13 @@ matrixClient.on( RoomEvent.Timeline, async ( event, room, toStartOfTimeline ) =>
 		if ( messageContent === "ping" ) {
 			await matrixClient.sendTextMessage( room.roomId, "pong" )
 		}
+	
+	// Encrypted message...
+	} else if ( event.getType() == "m.room.encrypted" ) {
+		const messageSender = event.getSender()
+		if ( messageSender === undefined ) throw new Error( "Message without sender?" )
+
+		await matrixClient.downloadKeys( [ messageSender ] )
 	}
 } )
 

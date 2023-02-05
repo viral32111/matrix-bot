@@ -6,3 +6,6 @@ dist/
 
 # Secrets
 local.env
+
+# Persistent data
+data/
