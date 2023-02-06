@@ -27,16 +27,16 @@ config( { path: "./local.env" } )
 // Ensure that required configuration variables are defined
 if ( process.env.HOMESERVER_DOMAIN === undefined ) throw new Error( "HOMESERVER_DOMAIN is not defined in environment variables" )
 if ( process.env.USER_NAME === undefined ) throw new Error( "USER_NAME is not defined in environment variables" )
-if ( process.env.USER_PASSWORD === undefined && process.env.USER_TOKEN === undefined ) throw new Error( "Either USER_PASSWORD or USER_TOKEN is not defined in environment variables" )
+if ( process.env.USER_PASSWORD === undefined && process.env.ACCESS_TOKEN === undefined ) throw new Error( "Either USER_PASSWORD or ACCESS_TOKEN is not defined in environment variables" )
+if ( process.env.DEVICE_ID !== undefined && process.env.ACCESS_TOKEN === undefined ) throw new Error( "Can only define DEVICE_ID when ACCESS_TOKEN is also defined in environment variables" )
 const HOMESERVER_DOMAIN = process.env.HOMESERVER_DOMAIN
 const USER_NAME = process.env.USER_NAME
 const USER_PASSWORD = process.env.USER_PASSWORD
-const USER_TOKEN = process.env.USER_TOKEN
 
-// Easy access to some variables
-export const userIdentifier = `@${ USER_NAME }:${ HOMESERVER_DOMAIN }`
-export const deviceIdentifier = "matrix-bot"
-let userToken = USER_TOKEN
+// These are changed later on after login
+export let userIdentifier = `@${ USER_NAME }:${ HOMESERVER_DOMAIN }`
+export let deviceIdentifier = process.env.DEVICE_ID
+export let accessToken = process.env.ACCESS_TOKEN
 
 // Parse command-line flags & arguments
 import commandLineArgs from "command-line-args"
@@ -45,30 +45,36 @@ export const commandLineFlags = commandLineArgs( [
 	{ name: "set-display-name", type: String }
 ] )
 
-// Deprecation notice
+// Deprecation notices
+if ( process.env.USER_TOKEN !== undefined ) console.warn( "Environment variable USER_TOKEN is deprecated, use ACCESS_TOKEN instead" )
 if ( "fetch-access-token" in commandLineFlags ) console.warn( "The --fetch-access-token flag is deprecated as tokens are now fetched automatically!" )
 
-// Fetch an access token if we don't have one
-import { fetchAccessToken } from "./functions/access-token.js"
-if ( userToken === undefined || userToken.length <= 0 ) {
-	if ( USER_PASSWORD === undefined || USER_PASSWORD.length <= 0 ) throw new Error( "User password must be provided to fetch access token" )
+// Login with credentials if we don't have our access token, device ID, etc
+import { loginWithCredentials } from "./functions/login.js"
+if ( accessToken === undefined || accessToken.length <= 0 ) {
+	if ( USER_PASSWORD === undefined || USER_PASSWORD.length <= 0 ) throw new Error( "User password must be provided when logging in using credentials" )
+	if ( deviceIdentifier !== undefined && deviceIdentifier.length > 0 ) throw new Error( "Device identifier must not be provided when logging in using credentials" )
 
-	userToken = await fetchAccessToken( USER_NAME, USER_PASSWORD, HOMESERVER_DOMAIN )
-	console.log( "Fetched access token for user '%s' on home-server '%s'", USER_NAME, HOMESERVER_DOMAIN )
+	const loginResponse = await loginWithCredentials( USER_NAME, USER_PASSWORD, HOMESERVER_DOMAIN )
+	userIdentifier = loginResponse.userIdentifier
+	deviceIdentifier = loginResponse.deviceIdentifier
+	accessToken = loginResponse.accessToken
+
+	console.log( "Logged in as '%s' (device: '%s', token: '%s')", userIdentifier, deviceIdentifier, accessToken )
 }
 
 // Create the client
 export const matrixClient = createClient( {
 	baseUrl: `https://${ HOMESERVER_DOMAIN }`,
 	userId: userIdentifier,
-	accessToken: userToken,
 	deviceId: deviceIdentifier,
+	accessToken: accessToken,
 	cryptoStore: new LocalStorageCryptoStore( localStorage ),
 	store: new MemoryStore( {
 		localStorage: localStorage
 	} )
 } )
-console.log( "Created client for user '%s' on home-server '%s'", USER_NAME, HOMESERVER_DOMAIN )
+console.log( "Created client for user '%s' (device '%s') on home-server '%s'", USER_NAME, deviceIdentifier, HOMESERVER_DOMAIN )
 
 // Setup encryption
 await matrixClient.initCrypto()

@@ -1,9 +1,9 @@
 // Import the Matrix SDK
-import { ClientEvent, RoomEvent, RoomMemberEvent } from "matrix-js-sdk"
+import { ClientEvent, MatrixEventEvent, RoomEvent, RoomMemberEvent } from "matrix-js-sdk"
 import { SyncState } from "matrix-js-sdk/lib/sync.js"
 
 // Import from main script
-import { commandLineFlags, matrixClient, userIdentifier } from "./main.js"
+import { commandLineFlags, deviceIdentifier, matrixClient, userIdentifier } from "./main.js"
 
 // Do an initial sync with the homeserver
 matrixClient.once( ClientEvent.Sync, async ( state ) => {
@@ -26,25 +26,25 @@ matrixClient.once( ClientEvent.Sync, async ( state ) => {
 			console.log( "\tRoom '%s' with %d members", room.name, room.getJoinedMembers().length )
 			for ( const roomMember of room.getJoinedMembers() ) {
 				console.log( "\t\tMember '%s'", roomMember.name )
-				await matrixClient.downloadKeys( [ roomMember.userId ] ) // Fetch member keys
+				//await matrixClient.downloadKeys( [ roomMember.userId ] ) // Fetch member keys
 			}
 		}
 
-		// TODO: Many of the events below are called for historical events, so we should register them here to avoid that
-
-		/*const deviceId = matrixClient.deviceId
-		console.log( "Our device ID: '%s'", deviceId )
-		if ( deviceId === null ) throw new Error( "Device ID is null?" )
-		await matrixClient.setDeviceDetails( deviceId, {
-			display_name: deviceIdentifier
-		} )*/
+		// Set our device human-readable name
+		if ( deviceIdentifier === undefined ) throw new Error( "Device identifier is undefined?" )
+		await matrixClient.setDeviceDetails( deviceIdentifier, {
+			display_name: "matrix-bot"
+		} )
 
 		// List information about our devices
 		const { devices: devices } = await matrixClient.getDevices()
 		console.log( "Found %d devices", devices.length )
 		for ( const device of devices ) {
-			console.log( "\tDevice '%s' (%s) last seen at '%s' from '%s'", device.display_name, device.device_id, device.last_seen_ts, device.last_seen_ip )
+			if ( device.last_seen_ts === undefined ) throw new Error( "Device last seen timestamp is undefined?" )
+			console.log( "\tDevice '%s' (%s) last seen at '%s' from '%s'", device.display_name, device.device_id, new Date( device.last_seen_ts ), device.last_seen_ip )
 		}
+
+		// TODO: Many of the events below are called for historical events, so we should register them here to avoid that
 
 	// Die if we got anything other than the initial sync
 	} else {
@@ -56,25 +56,51 @@ matrixClient.once( ClientEvent.Sync, async ( state ) => {
 // Room event...
 matrixClient.on( RoomEvent.Timeline, async ( event, room, toStartOfTimeline ) => {
 	if ( room === undefined ) throw new Error( "Room is undefined in RoomEvent.Timeline event handler" )
-	console.debug( "Room '%s' got new TIMELINE event: %s (%s)", room.name, event.getType(), toStartOfTimeline )
+	console.debug( "Room '%s' got new TIMELINE event: %s (%s, %s)", room.name, event.getType(), toStartOfTimeline, event.isEncrypted() )
 
 	// Message was sent...
 	if ( event.getType() === "m.room.message" && toStartOfTimeline === false ) {
 		const messageSender = event.getSender()
 		const messageContent = event.getContent().body
-		console.log( "Message '%s' from '%s'", messageContent, messageSender )
+
+		if ( messageSender === undefined ) throw new Error( "Message without sender?" )
+
+		console.log( "Unencrypted message '%s' from '%s'", messageContent, messageSender )
 
 		// Reply to ping messages
 		if ( messageContent === "ping" ) {
 			await matrixClient.sendTextMessage( room.roomId, "pong" )
 		}
-	
+
 	// Encrypted message...
-	} else if ( event.getType() == "m.room.encrypted" ) {
+	} /*else if ( event.getType() == "m.room.encrypted" ) {
 		const messageSender = event.getSender()
+		const messageContent = event.getContent().body // Doesn't work!
+
 		if ( messageSender === undefined ) throw new Error( "Message without sender?" )
 
-		await matrixClient.downloadKeys( [ messageSender ] )
+		//await matrixClient.downloadKeys( [ messageSender ] )
+
+		console.log( "Encrypted message '%s' from '%s'", messageContent, messageSender )
+	}*/
+} )
+
+// Decryption event...
+matrixClient.on( MatrixEventEvent.Decrypted, ( event ) => {
+	if ( event.isDecryptionFailure() === true ) {
+		console.warn( "Failed to decrypt event: %s", event.getType() )
+		return
+	}
+
+	console.debug( "Decrypted event: %s", event.getType() )
+
+	if ( event.getType() == "m.room.message" ) {
+		const messageSender = event.getSender()
+		const messageContent = event.getContent().body
+
+		if ( messageSender === undefined ) throw new Error( "Message without sender?" )
+
+		console.log( "Encrypted message '%s' from '%s'", messageContent, messageSender )
 	}
 } )
 
