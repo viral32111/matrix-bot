@@ -40,6 +40,30 @@ export const loginWithCredentials = async ( userName: string, userPassword: stri
 	// Check the access token
 	if ( loginResponse.access_token !== matrixClient.getAccessToken() ) throw new Error( "Login response access token does not match client access token" )
 
+	// List all registered devices
+	const { devices: devices } = await matrixClient.getDevices()
+	console.log( "Found %d registered devices", devices.length )
+	for ( const device of devices ) {
+		if ( device.last_seen_ts === undefined ) throw new Error( "Device last seen timestamp is undefined?" )
+		console.log( "\tDevice '%s' (%s) last seen at '%s' from '%s'", device.display_name, device.device_id, new Date( device.last_seen_ts ), device.last_seen_ip )
+
+		// Remove old devices (excluding original user creation via Dendrite CLI)
+		if ( device.device_id !== loginResponse.device_id && device.device_id !== "shared_secret_registration" ) {
+			await matrixClient.deleteDevice( device.device_id, {
+				type: "m.login.password",
+				identifier: {
+					type: "m.id.user",
+					user: loginResponse.user_id
+				},
+				password: userPassword,
+				session: matrixClient.getSessionId()
+			} )
+			console.log( "\t\tRemoved old device '%s' (%s)", device.display_name, device.device_id )
+		}
+	}
+
+	matrixClient.stopClient()
+
 	return {
 		userIdentifier: loginResponse.user_id,
 		deviceIdentifier: loginResponse.device_id,

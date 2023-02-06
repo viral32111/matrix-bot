@@ -29,9 +29,9 @@ if ( process.env.HOMESERVER_DOMAIN === undefined ) throw new Error( "HOMESERVER_
 if ( process.env.USER_NAME === undefined ) throw new Error( "USER_NAME is not defined in environment variables" )
 if ( process.env.USER_PASSWORD === undefined && process.env.ACCESS_TOKEN === undefined ) throw new Error( "Either USER_PASSWORD or ACCESS_TOKEN is not defined in environment variables" )
 if ( process.env.DEVICE_ID !== undefined && process.env.ACCESS_TOKEN === undefined ) throw new Error( "Can only define DEVICE_ID when ACCESS_TOKEN is also defined in environment variables" )
-const HOMESERVER_DOMAIN = process.env.HOMESERVER_DOMAIN
-const USER_NAME = process.env.USER_NAME
-const USER_PASSWORD = process.env.USER_PASSWORD
+export const HOMESERVER_DOMAIN = process.env.HOMESERVER_DOMAIN
+export const USER_NAME = process.env.USER_NAME
+export const USER_PASSWORD = process.env.USER_PASSWORD
 
 // These are changed later on after login
 export let userIdentifier = `@${ USER_NAME }:${ HOMESERVER_DOMAIN }`

@@ -31,18 +31,12 @@ matrixClient.once( ClientEvent.Sync, async ( state ) => {
 		}
 
 		// Set our device human-readable name
+		const deviceDisplayName = "Matrix Bot"
 		if ( deviceIdentifier === undefined ) throw new Error( "Device identifier is undefined?" )
 		await matrixClient.setDeviceDetails( deviceIdentifier, {
-			display_name: "matrix-bot"
+			display_name: deviceDisplayName
 		} )
-
-		// List information about our devices
-		const { devices: devices } = await matrixClient.getDevices()
-		console.log( "Found %d devices", devices.length )
-		for ( const device of devices ) {
-			if ( device.last_seen_ts === undefined ) throw new Error( "Device last seen timestamp is undefined?" )
-			console.log( "\tDevice '%s' (%s) last seen at '%s' from '%s'", device.display_name, device.device_id, new Date( device.last_seen_ts ), device.last_seen_ip )
-		}
+		console.log( "Set display name of device '%s' to '%s'", deviceIdentifier, deviceDisplayName )
 
 		// TODO: Many of the events below are called for historical events, so we should register them here to avoid that
 
@@ -62,7 +56,6 @@ matrixClient.on( RoomEvent.Timeline, async ( event, room, toStartOfTimeline ) =>
 	if ( event.getType() === "m.room.message" && toStartOfTimeline === false ) {
 		const messageSender = event.getSender()
 		const messageContent = event.getContent().body
-
 		if ( messageSender === undefined ) throw new Error( "Message without sender?" )
 
 		console.log( "Unencrypted message '%s' from '%s'", messageContent, messageSender )
@@ -76,7 +69,6 @@ matrixClient.on( RoomEvent.Timeline, async ( event, room, toStartOfTimeline ) =>
 	} /*else if ( event.getType() == "m.room.encrypted" ) {
 		const messageSender = event.getSender()
 		const messageContent = event.getContent().body // Doesn't work!
-
 		if ( messageSender === undefined ) throw new Error( "Message without sender?" )
 
 		//await matrixClient.downloadKeys( [ messageSender ] )
@@ -97,7 +89,6 @@ matrixClient.on( MatrixEventEvent.Decrypted, ( event ) => {
 	if ( event.getType() == "m.room.message" ) {
 		const messageSender = event.getSender()
 		const messageContent = event.getContent().body
-
 		if ( messageSender === undefined ) throw new Error( "Message without sender?" )
 
 		console.log( "Encrypted message '%s' from '%s'", messageContent, messageSender )
