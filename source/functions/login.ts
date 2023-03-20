@@ -49,7 +49,7 @@ export const loginWithCredentials = async ( userName: string, userPassword: stri
 
 		// Remove old devices (excluding original user creation via Dendrite CLI)
 		if ( device.device_id !== loginResponse.device_id && device.device_id !== "shared_secret_registration" ) {
-			await matrixClient.deleteDevice( device.device_id, {
+			await matrixClient.deleteDevice( device.device_id, { // https://spec.matrix.org/v1.5/client-server-api/#password-based
 				type: "m.login.password",
 				identifier: {
 					type: "m.id.user",
