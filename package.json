@@ -34,7 +34,7 @@
 		"@types/node-localstorage": "^1.3.0",
 		"@typescript-eslint/eslint-plugin": "^5.56.0",
 		"@typescript-eslint/parser": "^5.56.0",
-		"eslint": "^8.36.0",
+		"eslint": "^8.37.0",
 		"typescript": "^5.0.2"
 	}
 }
