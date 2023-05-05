@@ -1,5 +1,5 @@
 # Start from my Node.js image
-FROM ghcr.io/viral32111/nodejs:18
+FROM ghcr.io/viral32111/nodejs:18-ubuntu
 
 # Configure the project directory
 ARG MATRIXBOT_DIRECTORY=/usr/local/matrix-bot
