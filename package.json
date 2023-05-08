@@ -19,7 +19,7 @@
 	"keywords": [],
 	"license": "AGPL-3.0-only",
 	"dependencies": {
-		"@matrix-org/olm": "^3.2.14",
+		"@matrix-org/olm": "^3.2.15",
 		"command-line-args": "^5.2.1",
 		"dotenv": "^16.0.3",
 		"loglevel": "^1.8.1",
