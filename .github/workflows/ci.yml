@@ -85,7 +85,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: ./artifact/
+          path: artifact
 
       - name: Create metadata for Docker image
         id: metadata
@@ -108,8 +108,8 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: ${{ github.event_name != 'pull_request' && !startsWith( github.ref_name, 'dependabot/' ) }}
-          file: ./Dockerfile
-          context: ./artifact/
+          file: Dockerfile
+          context: artifact/
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           platforms: linux/amd64
