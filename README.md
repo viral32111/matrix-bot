@@ -1,12 +1,17 @@
 # Matrix Bot
 
-[![CI](https://github.com/viral32111/matrix-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/viral32111/matrix-bot/actions/workflows/ci.yml) [![CodeQL](https://github.com/viral32111/matrix-bot/actions/workflows/codeql.yml/badge.svg)](https://github.com/viral32111/matrix-bot/actions/workflows/codeql.yml)
+[![CI](https://github.com/viral32111/matrix-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/viral32111/matrix-bot/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/viral32111/matrix-bot/actions/workflows/codeql.yml/badge.svg)](https://github.com/viral32111/matrix-bot/actions/workflows/codeql.yml)
+![GitHub tag (with filter)](https://img.shields.io/github/v/tag/viral32111/matrix-bot?label=Latest)
+![GitHub repository size](https://img.shields.io/github/repo-size/viral32111/matrix-bot?label=Size)
+![GitHub release downloads](https://img.shields.io/github/downloads/viral32111/matrix-bot/total?label=Downloads)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/viral32111/matrix-bot?label=Commits)
 
 The bot for my community Matrix room.
 
 **NOTE: This is under development and does not do much at the moment.**
 
-## License
+## ⚖️ License
 
 Copyright (C) 2022-2023 [viral32111](https://viral32111.com).
 
