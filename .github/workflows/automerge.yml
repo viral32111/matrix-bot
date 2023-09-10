@@ -31,4 +31,4 @@ jobs:
       - name: Enable auto-merge for pull request
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr merge --auto --merge ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --rebase ${{ github.event.pull_request.html_url }}
