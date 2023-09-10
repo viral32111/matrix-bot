@@ -139,7 +139,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: .artifact
+          path: artifact
 
       - name: Bundle build artifact
         run: zip -r ${{ env.ARTIFACT_NAME }}.zip artifact
