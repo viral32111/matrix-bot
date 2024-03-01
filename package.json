@@ -21,7 +21,7 @@
 	"dependencies": {
 		"@matrix-org/olm": "^3.2.15",
 		"command-line-args": "^5.2.1",
-		"dotenv": "^16.4.1",
+		"dotenv": "^16.4.5",
 		"loglevel": "^1.9.1",
 		"matrix-js-sdk": "^31.4.0",
 		"node-localstorage": "^3.0.5"
