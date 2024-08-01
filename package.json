@@ -20,7 +20,7 @@
 	"license": "AGPL-3.0-only",
 	"dependencies": {
 		"@matrix-org/olm": "^3.2.15",
-		"command-line-args": "^5.2.1",
+		"command-line-args": "^6.0.0",
 		"dotenv": "^16.4.5",
 		"loglevel": "^1.9.1",
 		"matrix-js-sdk": "^33.1.0",
