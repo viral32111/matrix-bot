@@ -23,7 +23,7 @@
 		"command-line-args": "^6.0.0",
 		"dotenv": "^16.4.5",
 		"loglevel": "^1.9.1",
-		"matrix-js-sdk": "^34.2.0",
+		"matrix-js-sdk": "^34.3.1",
 		"node-localstorage": "^3.0.5"
 	},
 	"devDependencies": {
